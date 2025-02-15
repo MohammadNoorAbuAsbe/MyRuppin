@@ -26,7 +26,7 @@ import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-data class Course(val name: String, val grade: String, val details: List<Detail>)
+data class Course(val name: String, val grade: String, val krs_snl: String, val details: List<Detail>)
 data class Detail(val name: String, val subDetails: List<SubDetail>)
 data class SubDetail(val groupName: String, val date: String, val time: String, val grade: String)
 
@@ -43,32 +43,104 @@ fun GradesScreen(navController: NavController) {
             .build()
     }
     var courses by remember { mutableStateOf<List<Course>?>(null) }
+    var cumulativeAverage by remember { mutableStateOf<String?>(null) }
+    var annualAverages by remember { mutableStateOf<List<String>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     val token by tokenManager.token.collectAsState(initial = null)
 
+    // State for filter
+    var selectedFilter by remember { mutableStateOf("All") }
+    var expanded by remember { mutableStateOf(false) }
+    val uniqueKrsSnl = courses?.map { it.krs_snl }?.distinct()?.sorted() ?: emptyList()
+
     LaunchedEffect(token) {
-        token?.let { fetchCourseData(it, client, scope) { courses = it; isLoading = false } }
+        token?.let { fetchCourseData(it, client, scope) { result ->
+            courses = result.first
+            cumulativeAverage = result.second.first
+            annualAverages = result.second.second
+            isLoading = false
+        }}
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(top = 32.dp, start = 16.dp, end = 16.dp)
     ) {
         Text(
             text = "Course Grades",
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(bottom = 16.dp)
         )
+
+        // Row for filter and average display
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Dropdown for filtering
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                TextButton(onClick = { expanded = true }) {
+                    Text("Filter: $selectedFilter")
+                }
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    DropdownMenuItem(
+                        onClick = {
+                            selectedFilter = "All"
+                            expanded = false
+                        },
+                        text = { Text(text = "All") }
+                    )
+                    uniqueKrsSnl.forEachIndexed { index, krsSnl ->
+                        DropdownMenuItem(
+                            onClick = {
+                                selectedFilter = krsSnl
+                                expanded = false
+                            },
+                            text = { Text(text = krsSnl) }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Display the appropriate average
+            val averageText = if (selectedFilter == "All") {
+                "Cumulative Average: $cumulativeAverage"
+            } else {
+                val index = uniqueKrsSnl.indexOf(selectedFilter)
+                "Annual Average: ${annualAverages.getOrNull(index) ?: "N/A"}"
+            }
+            Text(
+                text = averageText,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.align(Alignment.CenterVertically)
+            )
+        }
 
         if (isLoading) {
             CircularProgressIndicator()
         } else {
+            val filteredCourses = if (selectedFilter == "All") {
+                courses ?: emptyList()
+            } else {
+                courses?.filter { it.krs_snl == selectedFilter } ?: emptyList()
+            }
+
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(courses ?: emptyList()) { course ->
+                items(filteredCourses) { course ->
                     CourseCard(course)
                 }
             }
@@ -80,7 +152,7 @@ private fun fetchCourseData(
     token: String,
     client: OkHttpClient,
     scope: CoroutineScope,
-    onResult: (List<Course>) -> Unit
+    onResult: (Pair<List<Course>, Pair<String?, List<String>>>) -> Unit
 ) {
     val request = Request.Builder()
         .url("https://ruppinet.ruppin.ac.il/Portals/api/Grades/Data")
@@ -91,7 +163,7 @@ private fun fetchCourseData(
     client.newCall(request).enqueue(object : Callback {
         override fun onFailure(call: Call, e: IOException) {
             scope.launch {
-                onResult(listOf(Course("Error", e.message.orEmpty(), emptyList())))
+                onResult(Pair(listOf(Course("Error", e.message.orEmpty(), "", emptyList())), Pair(null, emptyList())))
             }
         }
 
@@ -99,29 +171,39 @@ private fun fetchCourseData(
             scope.launch {
                 try {
                     val responseBody = response.body?.string()
-                    val courses = parseCourses(responseBody)
-                    onResult(courses)
+                    val jsonObject = JSONObject(responseBody ?: "")
+                    val averagesArray = jsonObject.getJSONArray("averages")
+                    val cumulativeAverage = averagesArray.getJSONObject(0).getString("cumulativeAverage")
+                    val annualAverages = mutableListOf<String>()
+
+                    for (i in 0 until averagesArray.length()) {
+                        val annualAverage = averagesArray.getJSONObject(i).getString("annualAverage")
+                        annualAverages.add(annualAverage)
+                    }
+
+                    annualAverages.reverse()
+
+                    val courses = parseCourses(jsonObject)
+                    onResult(Pair(courses, Pair(cumulativeAverage, annualAverages)))
                 } catch (e: Exception) {
-                    onResult(listOf(Course("Error", "Error parsing response: ${e.message}", emptyList())))
+                    onResult(Pair(listOf(Course("Error", "Error parsing response: ${e.message}", "", emptyList())), Pair(null, emptyList())))
                 }
             }
         }
     })
 }
 
-private suspend fun parseCourses(responseBody: String?): List<Course> = withContext(Dispatchers.Default) {
+private suspend fun parseCourses(jsonObject: JSONObject): List<Course> = withContext(Dispatchers.Default) {
     val coursesList = mutableListOf<Course>()
-    responseBody?.let {
-        val jsonObject = JSONObject(it)
-        val clientData = jsonObject.getJSONObject("collapsedCourses").getJSONArray("clientData")
-        for (i in 0 until clientData.length()) {
-            val course = clientData.getJSONObject(i)
-            val courseName = course.getString("krs_shm")
-            val grade = course.optString("moed_1_zin", "Not graded yet")
+    val clientData = jsonObject.getJSONObject("collapsedCourses").getJSONArray("clientData")
+    for (i in 0 until clientData.length()) {
+        val course = clientData.getJSONObject(i)
+        val courseName = course.getString("krs_shm")
+        val grade = course.optString("moed_1_zin", "Not graded yet")
+        val krsSnl = course.getString("krs_snl")
 
-            val details = parseDetails(course)
-            coursesList.add(Course(courseName, grade, details))
-        }
+        val details = parseDetails(course)
+        coursesList.add(Course(courseName, grade, krsSnl, details))
     }
     coursesList
 }

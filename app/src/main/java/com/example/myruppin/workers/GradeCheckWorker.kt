@@ -70,7 +70,7 @@ class GradeCheckWorker(
     private fun sendNotification(title: String, message: String) {
         createNotificationChannel()
         val builder = NotificationCompat.Builder(applicationContext, "grade_channel")
-            .setSmallIcon(R.drawable.ic_notification) // Ensure this icon exists in your resources
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

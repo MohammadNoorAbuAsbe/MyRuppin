@@ -6,6 +6,9 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -78,9 +81,7 @@ fun HomeScreen(navController: NavController) {
     val scope = rememberCoroutineScope()
     val client = remember { OkHttpClient() }
 
-    var gpa by remember { mutableStateOf("--") }
     var currentEvent by remember { mutableStateOf<EventInfo?>(null) }
-    var isLoadingGpa by remember { mutableStateOf(true) }
     var isLoadingEvent by remember { mutableStateOf(true) }
     var upcomingEvents by remember { mutableStateOf<List<UpcomingEvent>>(emptyList()) }
     var isLoadingUpcoming by remember { mutableStateOf(true) }
@@ -198,36 +199,6 @@ fun HomeScreen(navController: NavController) {
     // Fetch data when screen loads
     LaunchedEffect(token) {
         token?.let { currentToken ->
-            // Fetch GPA
-            val request = Request.Builder()
-                .url("https://ruppinet.ruppin.ac.il/Portals/api/Home/AverageData")
-                .post(ByteArray(0).toRequestBody(null))
-                .header("Authorization", "Bearer $currentToken")
-                .build()
-
-            client.newCall(request).enqueue(object : Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    scope.launch {
-                        isLoadingGpa = false
-                        gpa = "Error"
-                    }
-                }
-
-                override fun onResponse(call: Call, response: Response) {
-                    scope.launch {
-                        try {
-                            val responseBody = response.body?.string()
-                            val jsonResponse = JSONObject(responseBody ?: "")
-                            gpa = jsonResponse.optString("average", "--")
-                            isLoadingGpa = false
-                        } catch (e: Exception) {
-                            gpa = "Error"
-                            isLoadingGpa = false
-                        }
-                    }
-                }
-            })
-
             fetchCurrentEvent(currentToken)
             fetchUpcomingEvents(currentToken)
         }
@@ -255,7 +226,7 @@ fun HomeScreen(navController: NavController) {
 
                 // Drawer items
                 NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Warning, contentDescription = null) },
+                    icon = { Icon(Icons.Default.BarChart, contentDescription = null) },
                     label = { Text("Grades") },
                     selected = false,
                     onClick = {
@@ -267,7 +238,7 @@ fun HomeScreen(navController: NavController) {
                 )
 
                 NavigationDrawerItem(
-                    icon = { Icon(Icons.Default.Warning, contentDescription = null) },
+                    icon = { Icon(Icons.Default.Schedule, contentDescription = null) },
                     label = { Text("Schedule") },
                     selected = false,
                     onClick = {
@@ -294,7 +265,7 @@ fun HomeScreen(navController: NavController) {
                                 }
                             }
                         }) {
-                            Icon(Icons.Default.Warning, contentDescription = "Menu")
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
                         }
                     }
                 )
@@ -308,32 +279,6 @@ fun HomeScreen(navController: NavController) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // GPA Section
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "GPA",
-                        fontSize = titleSize,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = smallPadding)
-                    )
-                    if (isLoadingGpa) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(iconSize),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    } else {
-                        Text(
-                            text = gpa,
-                            fontSize = gpaSize,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-
                 // Current Event Section
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -381,7 +326,7 @@ fun HomeScreen(navController: NavController) {
                                 }
                             } else {
                                 Text(
-                                    text = "No events scheduled for today",
+                                    text = "No more events scheduled for today",
                                     fontSize = bodySize,
                                     modifier = Modifier.padding(standardPadding),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -396,10 +341,11 @@ fun HomeScreen(navController: NavController) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(standardPadding),
-                    verticalArrangement = Arrangement.spacedBy(smallPadding)
+                    verticalArrangement = Arrangement.spacedBy(smallPadding),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Upcoming Events",
+                        text = "Upcoming Major Events",
                         fontSize = titleSize,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = smallPadding)
@@ -465,9 +411,19 @@ fun HomeScreen(navController: NavController) {
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
+                                            if (event.isExam) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Warning,
+                                                    contentDescription = "Exam",
+                                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                                    modifier = Modifier.size(warningIconSize),
+                                                )
+                                            }
                                             Column(
                                                 modifier = Modifier.weight(1f),
-                                                verticalArrangement = Arrangement.spacedBy(tinyPadding)
+                                                verticalArrangement = Arrangement.spacedBy(tinyPadding),
+                                                horizontalAlignment = Alignment.End
+
                                             ) {
                                                 Text(
                                                     text = event.title,
@@ -485,14 +441,6 @@ fun HomeScreen(navController: NavController) {
                                                         MaterialTheme.colorScheme.onErrorContainer
                                                     else
                                                         MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            }
-                                            if (event.isExam) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Warning,
-                                                    contentDescription = "Exam",
-                                                    tint = MaterialTheme.colorScheme.onErrorContainer,
-                                                    modifier = Modifier.size(warningIconSize)
                                                 )
                                             }
                                         }

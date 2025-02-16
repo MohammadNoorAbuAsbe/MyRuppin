@@ -3,8 +3,12 @@ package com.example.myruppin.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -22,7 +26,6 @@ fun LoginScreen(navController: NavController, modifier: Modifier = Modifier) {
     var password by remember { mutableStateOf("") }
     var responseText by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
-    // Only for initial auto-login
     var initialAutoLoginDone by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -30,11 +33,9 @@ fun LoginScreen(navController: NavController, modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     val client = remember { OkHttpClient() }
 
-    // Collect saved credentials
     val savedId by tokenManager.studentId.collectAsState(initial = null)
     val savedPassword by tokenManager.password.collectAsState(initial = null)
 
-    // Function to handle login
     val tryLogin = { studentId: String, pwd: String ->
         isLoading = true
         scope.launch {
@@ -71,7 +72,6 @@ fun LoginScreen(navController: NavController, modifier: Modifier = Modifier) {
                                 val success = jsonResponse.getBoolean("success")
                                 if (success) {
                                     val newToken = jsonResponse.getString("token")
-                                    // Save all credentials
                                     tokenManager.saveCredentials(newToken, studentId, pwd)
                                     responseText = "Login successful!"
                                     navController.navigate("home") {
@@ -95,13 +95,11 @@ fun LoginScreen(navController: NavController, modifier: Modifier = Modifier) {
         }
     }
 
-    // Set saved credentials to input fields
     LaunchedEffect(savedId, savedPassword) {
         savedId?.let { id = it }
         savedPassword?.let { password = it }
     }
 
-    // Then, perform auto-login if we have credentials
     LaunchedEffect(id, password) {
         if (!initialAutoLoginDone && savedId != null && savedPassword != null) {
             id = savedId!!
@@ -111,53 +109,77 @@ fun LoginScreen(navController: NavController, modifier: Modifier = Modifier) {
         }
     }
 
-    Column(
-        modifier = modifier
-            .padding(16.dp)
-            .fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+    val idFocusRequester = remember { FocusRequester() }
+    val passwordFocusRequester = remember { FocusRequester() }
+
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
-        TextField(
-            value = id,
-            onValueChange = { id = it },
-            label = { Text("Student ID") },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !isLoading
-        )
-
-        TextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !isLoading
-        )
-
-        Button(
-            onClick = { tryLogin(id, password) },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !isLoading && id.isNotEmpty() && password.isNotEmpty()
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary
+            TextField(
+                value = id,
+                onValueChange = { id = it },
+                label = { Text("Student ID") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(idFocusRequester),
+                enabled = !isLoading,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                    onNext = { passwordFocusRequester.requestFocus() }
                 )
-            } else {
-                Text("Login")
-            }
-        }
-
-        if (responseText.isNotEmpty()) {
-            Text(
-                text = responseText,
-                color = if (responseText.contains("successful")) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.error
-                }
             )
+
+            TextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(passwordFocusRequester),
+                enabled = !isLoading,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                    onDone = { tryLogin(id, password) }
+                )
+            )
+
+            Button(
+                onClick = { tryLogin(id, password) },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading && id.isNotEmpty() && password.isNotEmpty()
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text("Login")
+                }
+            }
+
+            if (responseText.isNotEmpty()) {
+                Text(
+                    text = responseText,
+                    color = if (responseText.contains("successful")) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.error
+                    }
+                )
+            }
         }
     }
 }

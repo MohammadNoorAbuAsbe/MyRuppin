@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -48,7 +49,6 @@ fun GradesScreen(navController: NavController) {
     var isLoading by remember { mutableStateOf(true) }
     val token by tokenManager.token.collectAsState(initial = null)
 
-    // State for filter
     var selectedFilter by remember { mutableStateOf("All") }
     var expanded by remember { mutableStateOf(false) }
     val uniqueKrsSnl = courses?.map { it.krs_snl }?.distinct()?.sorted() ?: emptyList()
@@ -75,18 +75,16 @@ fun GradesScreen(navController: NavController) {
                 .padding(bottom = 16.dp)
         )
 
-        // Row for filter and average display
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Dropdown for filtering
             Box(
                 modifier = Modifier.weight(1f),
                 contentAlignment = Alignment.CenterStart
             ) {
                 TextButton(onClick = { expanded = true }) {
-                    Text("Filter: $selectedFilter")
+                    Text("Filter: $selectedFilter", color = MaterialTheme.colorScheme.primary)
                 }
                 DropdownMenu(
                     expanded = expanded,
@@ -113,7 +111,6 @@ fun GradesScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Display the appropriate average
             val averageText = if (selectedFilter == "All") {
                 "Cumulative Average: $cumulativeAverage"
             } else {
@@ -123,12 +120,15 @@ fun GradesScreen(navController: NavController) {
             Text(
                 text = averageText,
                 style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.align(Alignment.CenterVertically)
             )
         }
 
         if (isLoading) {
-            CircularProgressIndicator()
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
         } else {
             val filteredCourses = if (selectedFilter == "All") {
                 courses ?: emptyList()
@@ -242,9 +242,11 @@ private fun parseSubDetails(innerBody: JSONObject): List<SubDetail> {
 fun CourseCard(course: Course) {
     var expanded by remember { mutableStateOf(false) }
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { expanded = !expanded },
         elevation = CardDefaults.cardElevation(4.dp),
-        onClick = { expanded = !expanded }
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -277,7 +279,8 @@ fun DetailCard(detail: Detail) {
     ) {
         Icon(
             imageVector = if (detailExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-            contentDescription = null
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary
         )
         Text(text = detail.name, style = MaterialTheme.typography.bodySmall)
     }

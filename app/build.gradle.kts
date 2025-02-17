@@ -40,6 +40,7 @@ android {
 }
 
 dependencies {
+    implementation (libs.jsoup)
     implementation (libs.androidx.work.runtime.ktx)
     implementation (libs.androidx.compose.material3.material3)
     implementation (libs.androidx.material.icons.extended)

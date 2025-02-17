@@ -28,7 +28,7 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 data class Course(val name: String, val grade: String, val krs_snl: String, val details: List<Detail>)
-data class Detail(val name: String, val subDetails: List<SubDetail>)
+data class Detail(val name: String, val finalGrade: String, val subDetails: List<SubDetail>)
 data class SubDetail(val groupName: String, val date: String, val time: String, val grade: String)
 
 @Composable
@@ -44,7 +44,7 @@ fun GradesScreen(navController: NavController) {
             .build()
     }
     var courses by remember { mutableStateOf<List<Course>?>(null) }
-    var cumulativeAverage by remember { mutableStateOf<String?>(null) }
+    var cumulativeAverage by remember { mutableStateOf<String?>("N/A") }
     var annualAverages by remember { mutableStateOf<List<String>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     val token by tokenManager.token.collectAsState(initial = null)
@@ -215,8 +215,9 @@ private fun parseDetails(course: JSONObject): List<Detail> {
         for (j in 0 until bodyArray.length()) {
             val innerBody = bodyArray.getJSONObject(j)
             val innerCourseName = innerBody.optString("krs_shm", "No name")
+            val finalGrade = innerBody.optString("bhnzin", "No final grade")
             val subDetails = parseSubDetails(innerBody)
-            details.add(Detail(innerCourseName, subDetails))
+            details.add(Detail(innerCourseName, finalGrade, subDetails))
         }
     }
     return details
@@ -277,11 +278,19 @@ fun DetailCard(detail: Detail) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = if (detailExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = if (detailExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            // Check for both null and "null" string, default to "N/A"
+            val finalGradeText = if (detail.finalGrade.isNullOrBlank() || detail.finalGrade == "null") "N/A" else detail.finalGrade
+            Text(text = "Final Grade: $finalGradeText", style = MaterialTheme.typography.bodySmall)
+        }
         Text(text = detail.name, style = MaterialTheme.typography.bodySmall)
     }
     if (detailExpanded) {
@@ -303,7 +312,8 @@ fun SubDetailCard(subDetail: SubDetail) {
                     Text(text = "Date: ${subDetail.date}", style = MaterialTheme.typography.bodySmall)
                     Text(text = "Time: ${subDetail.time}", style = MaterialTheme.typography.bodySmall)
                 }
-                Text(text = "Grade: ${subDetail.grade}", style = MaterialTheme.typography.bodySmall)
+                val subGradeText = if (subDetail.grade.isNullOrBlank() || subDetail.grade == "null") "N/A" else subDetail.grade
+                Text(text = "Grade: $subGradeText", style = MaterialTheme.typography.bodySmall)
             }
             Text(text = subDetail.groupName, style = MaterialTheme.typography.bodyMedium)
         }

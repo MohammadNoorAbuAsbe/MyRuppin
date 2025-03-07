@@ -21,7 +21,12 @@ import com.example.myruppin.screens.HomeScreen
 import com.example.myruppin.screens.LoginScreen
 import com.example.myruppin.ui.theme.MyRuppinTheme
 import android.Manifest
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.myruppin.screens.ScheduleScreen
+import com.example.myruppin.workers.GradeCheckWorker
+import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
 
@@ -39,6 +44,17 @@ class MainActivity : ComponentActivity() {
                 ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_CODE)
             }
         }
+
+        // Schedule the GradeCheckWorker to run periodically
+        val workRequest = PeriodicWorkRequestBuilder<GradeCheckWorker>(15, TimeUnit.MINUTES)
+            .build()
+
+        WorkManager.getInstance(applicationContext).enqueueUniquePeriodicWork(
+            "GradeCheckWork",
+            ExistingPeriodicWorkPolicy.KEEP,
+            workRequest
+        )
+
 
         setContent {
             MyRuppinTheme {
@@ -59,7 +75,7 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination =  "login"
     ) {
         composable("login") {
             LoginScreen(navController)

@@ -2,12 +2,15 @@ package com.example.myruppin.workers
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.example.myruppin.MainActivity
 import com.example.myruppin.R
 import com.example.myruppin.data.TokenManager
 import kotlinx.coroutines.Dispatchers
@@ -69,12 +72,21 @@ class GradeCheckWorker(
 
     private fun sendNotification(title: String, message: String) {
         createNotificationChannel()
+        val intent = Intent(applicationContext, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra("navigateTo", "grades")
+        }
+        val pendingIntent: PendingIntent = PendingIntent.getActivity(applicationContext, 0, intent,
+            PendingIntent.FLAG_IMMUTABLE)
+
+
         val builder = NotificationCompat.Builder(applicationContext, "grade_channel")
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
         try {
             with(NotificationManagerCompat.from(applicationContext)) {
                 notify(1, builder.build())

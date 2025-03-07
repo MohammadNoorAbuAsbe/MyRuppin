@@ -36,6 +36,11 @@ class HomeViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    // Logout completion state
+    private val _logoutComplete = MutableStateFlow(false)
+    val logoutComplete: StateFlow<Boolean> = _logoutComplete.asStateFlow()
+
+
     init {
         loadHomeData()
     }
@@ -103,6 +108,7 @@ class HomeViewModel(
     fun logout() {
         viewModelScope.launch {
             tokenManager.clearAll()
+            _logoutComplete.value = true // Indicate that logout is complete
         }
     }
 }

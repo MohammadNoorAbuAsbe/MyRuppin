@@ -67,6 +67,7 @@ fun HomeScreen(navController: NavController) {
     val upcomingEvents by viewModel.upcomingEvents.collectAsState()
     val isLoadingUpcoming by viewModel.isLoadingUpcoming.collectAsState()
     val error by viewModel.error.collectAsState()
+    val logoutComplete by viewModel.logoutComplete.collectAsState()
 
     // Drawer state
     val scope = rememberCoroutineScope()
@@ -76,6 +77,14 @@ fun HomeScreen(navController: NavController) {
     LaunchedEffect(error) {
         error?.let {
             // You could show a snackbar or other error UI here
+        }
+    }
+
+    LaunchedEffect(logoutComplete) {
+        if (logoutComplete) {
+            navController.navigate("login") {
+                popUpTo("home") { inclusive = true }
+            }
         }
     }
 
@@ -245,18 +254,12 @@ fun HomeScreen(navController: NavController) {
                 Button(
                     onClick = {
                         viewModel.logout()
-                        navController.navigate("login") {
-                            popUpTo("home") { inclusive = true }
-                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(standardPadding)
                 ) {
-                    Text(
-                        "Logout",
-                        fontSize = bodySize
-                    )
+                    Text("Logout", fontSize = bodySize)
                 }
             }
         }

@@ -94,7 +94,7 @@ fun GradesScreen(navController: NavController) {
                             text = { Text(text = "All") }
                         )
 
-                        uniqueKrsSnl.forEach { krsSnl ->
+                        uniqueKrsSnl.reversed().forEach { krsSnl ->
                             DropdownMenuItem(
                                 onClick = {
                                     viewModel.setFilter(krsSnl)

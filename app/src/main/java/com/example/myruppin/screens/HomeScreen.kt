@@ -68,6 +68,7 @@ fun HomeScreen(navController: NavController) {
     val isLoadingUpcoming by viewModel.isLoadingUpcoming.collectAsState()
     val error by viewModel.error.collectAsState()
     val logoutComplete by viewModel.logoutComplete.collectAsState()
+    val userName by viewModel.userName.collectAsState()
 
     // Drawer state
     val scope = rememberCoroutineScope()
@@ -79,6 +80,8 @@ fun HomeScreen(navController: NavController) {
             // You could show a snackbar or other error UI here
         }
     }
+
+
 
     LaunchedEffect(logoutComplete) {
         if (logoutComplete) {
@@ -140,7 +143,7 @@ fun HomeScreen(navController: NavController) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Home") },
+                    title = { Text("Home")},
                     navigationIcon = {
                         IconButton(onClick = {
                             scope.launch {
@@ -151,6 +154,15 @@ fun HomeScreen(navController: NavController) {
                         }) {
                             Icon(Icons.Default.Menu, contentDescription = "Menu")
                         }
+                    },
+                    actions = {
+                        Text(
+                            text = userName ?: "Loading...",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(end = 16.dp)
+                        )
                     }
                 )
             }

@@ -122,4 +122,39 @@ class HomeRepository(private val client: OkHttpClient) {
 
         return events
     }
+
+    suspend fun fetchUserName(token: String): String? {
+        return withContext(Dispatchers.IO) {
+            val jsonBody = JSONObject().apply {}
+
+            val request = Request.Builder()
+                .url("https://ruppinet.ruppin.ac.il/Portals/api/Account/UserInfo")
+                .post(jsonBody.toString().toRequestBody("application/json".toMediaType()))
+                .header("Authorization", "Bearer $token")
+                .build()
+
+            try {
+                val response = client.newCall(request).execute()
+                if (!response.isSuccessful) {
+                    throw IOException("Unexpected response code: ${response.code}")
+                }
+
+                val responseBody = response.body?.string() ?: throw IOException("Empty response body")
+                parseUserName(responseBody)
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
+    private fun parseUserName(responseBody: String): String? {
+        val jsonResponse = JSONObject(responseBody)
+        val userInfo = jsonResponse.optJSONObject("userInfo")
+        if (userInfo != null) {
+            val firstName = userInfo.optString("smp", "")
+            val lastName = userInfo.optString("smm", "")
+            return "$firstName $lastName".trim().takeIf { it.isNotEmpty() }
+        }
+        return null
+    }
 }

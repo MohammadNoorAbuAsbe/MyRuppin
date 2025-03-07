@@ -40,6 +40,9 @@ class HomeViewModel(
     private val _logoutComplete = MutableStateFlow(false)
     val logoutComplete: StateFlow<Boolean> = _logoutComplete.asStateFlow()
 
+    private val _userName = MutableStateFlow<String?>(null)
+    val userName: StateFlow<String?> = _userName.asStateFlow()
+
 
     init {
         loadHomeData()
@@ -54,6 +57,7 @@ class HomeViewModel(
                 token?.let { currentToken ->
                     loadCurrentEvent(currentToken)
                     loadUpcomingEvents(currentToken)
+                    loadUserName(currentToken)
                 }
             }
         }
@@ -73,6 +77,20 @@ class HomeViewModel(
                 _error.value = "Error loading current event: ${e.message}"
             } finally {
                 _isLoadingEvent.value = false
+            }
+        }
+    }
+
+    private fun loadUserName(token: String) {
+        viewModelScope.launch {
+            try {
+                _userName.value = repository.fetchUserName(token)
+            } catch (e: IOException) {
+                _error.value = "Network error: ${e.message}"
+            } catch (e: Exception) {
+                _error.value = "Error loading user name: ${e.message}"
+            } finally {
+
             }
         }
     }

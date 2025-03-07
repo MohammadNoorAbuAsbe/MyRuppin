@@ -21,6 +21,7 @@ import com.example.myruppin.screens.HomeScreen
 import com.example.myruppin.screens.LoginScreen
 import com.example.myruppin.ui.theme.MyRuppinTheme
 import android.Manifest
+import com.example.myruppin.screens.ScheduleScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -68,6 +69,9 @@ fun AppNavigation() {
         }
         composable("grades") {
             GradesScreen(navController)
+        }
+        composable("schedule") {
+            ScheduleScreen(navController)
         }
     }
 }

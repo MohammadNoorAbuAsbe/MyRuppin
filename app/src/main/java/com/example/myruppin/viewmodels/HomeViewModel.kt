@@ -1,0 +1,108 @@
+package com.example.myruppin.viewmodels
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.myruppin.data.TokenManager
+import com.example.myruppin.data.models.EventInfo
+import com.example.myruppin.data.models.UpcomingEvent
+import com.example.myruppin.data.repository.HomeRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import java.io.IOException
+
+class HomeViewModel(
+    private val repository: HomeRepository,
+    private val tokenManager: TokenManager
+) : ViewModel() {
+
+    // Current Event State
+    private val _currentEvent = MutableStateFlow<EventInfo?>(null)
+    val currentEvent: StateFlow<EventInfo?> = _currentEvent.asStateFlow()
+
+    private val _isLoadingEvent = MutableStateFlow(true)
+    val isLoadingEvent: StateFlow<Boolean> = _isLoadingEvent.asStateFlow()
+
+    // Upcoming Events State
+    private val _upcomingEvents = MutableStateFlow<List<UpcomingEvent>>(emptyList())
+    val upcomingEvents: StateFlow<List<UpcomingEvent>> = _upcomingEvents.asStateFlow()
+
+    private val _isLoadingUpcoming = MutableStateFlow(true)
+    val isLoadingUpcoming: StateFlow<Boolean> = _isLoadingUpcoming.asStateFlow()
+
+    // Error State
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
+
+    init {
+        loadHomeData()
+    }
+
+    /**
+     * Loads all home screen data
+     */
+    private fun loadHomeData() {
+        viewModelScope.launch {
+            tokenManager.token.collectLatest { token ->
+                token?.let { currentToken ->
+                    loadCurrentEvent(currentToken)
+                    loadUpcomingEvents(currentToken)
+                }
+            }
+        }
+    }
+
+    /**
+     * Loads the current event
+     */
+    private fun loadCurrentEvent(token: String) {
+        viewModelScope.launch {
+            try {
+                _isLoadingEvent.value = true
+                _currentEvent.value = repository.fetchCurrentEvent(token)
+            } catch (e: IOException) {
+                _error.value = "Network error: ${e.message}"
+            } catch (e: Exception) {
+                _error.value = "Error loading current event: ${e.message}"
+            } finally {
+                _isLoadingEvent.value = false
+            }
+        }
+    }
+
+    /**
+     * Loads upcoming events
+     */
+    private fun loadUpcomingEvents(token: String) {
+        viewModelScope.launch {
+            try {
+                _isLoadingUpcoming.value = true
+                _upcomingEvents.value = repository.fetchUpcomingEvents(token)
+            } catch (e: IOException) {
+                _error.value = "Network error: ${e.message}"
+            } catch (e: Exception) {
+                _error.value = "Error loading upcoming events: ${e.message}"
+            } finally {
+                _isLoadingUpcoming.value = false
+            }
+        }
+    }
+
+    /**
+     * Refreshes all home data
+     */
+    fun refreshData() {
+        loadHomeData()
+    }
+
+    /**
+     * Logs out the user
+     */
+    fun logout() {
+        viewModelScope.launch {
+            tokenManager.clearAll()
+        }
+    }
+}

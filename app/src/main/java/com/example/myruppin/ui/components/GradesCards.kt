@@ -39,6 +39,29 @@ fun CourseCard(course: Course) {
                 course.details.forEach { detail ->
                     DetailCard(detail)
                 }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ){
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Text(
+                            text = course.courseWeight,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    Text(
+                        text = "נקודות זכות",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
         }
     }

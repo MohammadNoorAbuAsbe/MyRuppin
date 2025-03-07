@@ -81,9 +81,10 @@ class GradesRepository(private val client: OkHttpClient) {
                 val courseName = course.getString("krs_shm")
                 val grade = course.optString("moed_1_zin", "Not graded yet")
                 val krsSnl = course.getString("krs_snl")
+                val courseWeight = course.getString("zikui_mishkal")
                 val details = parseDetails(course)
 
-                coursesList.add(Course(courseName, grade, krsSnl, details))
+                coursesList.add(Course(courseName, grade, krsSnl, courseWeight,details))
             }
 
             coursesList

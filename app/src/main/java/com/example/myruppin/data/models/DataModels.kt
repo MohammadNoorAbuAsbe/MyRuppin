@@ -39,6 +39,7 @@ data class Course(
     val name: String,
     val grade: String,
     val krs_snl: String,
+    val courseWeight: String,
     val details: List<Detail>
 )
 

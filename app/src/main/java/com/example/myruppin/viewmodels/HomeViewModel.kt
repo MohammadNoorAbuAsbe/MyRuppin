@@ -51,6 +51,30 @@ class HomeViewModel(
         loadHomeData()
     }
 
+    fun fetchEvents(token: String) {
+        viewModelScope.launch {
+            _isLoadingEvent.value = true
+            _isLoadingUpcoming.value = true
+            _error.value = null
+
+
+                val currentEvents = repository.fetchCurrentEvents(token)
+                if (currentEvents != null) {
+                    _currentEvent.value = currentEvents.first.firstOrNull()
+                    _nextEvent.value = currentEvents.second.firstOrNull()
+                } else {
+                    _error.value = "Failed to fetch current events"
+                }
+
+                val upcomingEvents = repository.fetchUpcomingEvents(token)
+                _upcomingEvents.value = upcomingEvents
+            }
+
+            _isLoadingEvent.value = false
+            _isLoadingUpcoming.value = false
+        }
+
+
     /**
      * Loads all home screen data
      */

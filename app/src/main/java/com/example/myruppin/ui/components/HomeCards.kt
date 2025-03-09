@@ -1,3 +1,4 @@
+
 package com.example.myruppin.ui.components
 
 import androidx.compose.foundation.layout.*
@@ -28,7 +29,8 @@ fun CurrentEventCard(
     smallPadding: Dp,
     iconSize: Dp,
     title: String,
-    remainingTime: String // Add remainingTime parameter
+    remainingTime: String, // Add remainingTime parameter
+    countdownLabel: String // Add countdownLabel parameter
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -65,7 +67,8 @@ fun CurrentEventCard(
                         Text(
                             text = currentEvent.title,
                             fontSize = subtitleSize,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.align(Alignment.End)
                         )
                         Text(
                             text = "Location: ${currentEvent.place}",
@@ -77,11 +80,10 @@ fun CurrentEventCard(
                         )
                         // Display the countdown timer
                         Text(
-                            text = "Time remaining: $remainingTime",
+                            text = "$countdownLabel: $remainingTime",
                             fontSize = bodySize,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(standardPadding)
                         )
                     }
                 } else {

@@ -27,7 +27,8 @@ fun CurrentEventCard(
     standardPadding: Dp,
     smallPadding: Dp,
     iconSize: Dp,
-    title: String
+    title: String,
+    remainingTime: String // Add remainingTime parameter
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -73,6 +74,14 @@ fun CurrentEventCard(
                         Text(
                             text = "Time: ${currentEvent.startTime} - ${currentEvent.endTime}",
                             fontSize = bodySize
+                        )
+                        // Display the countdown timer
+                        Text(
+                            text = "Time remaining: $remainingTime",
+                            fontSize = bodySize,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(standardPadding)
                         )
                     }
                 } else {

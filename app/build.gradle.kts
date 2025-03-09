@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.myruppin"
+    namespace = "com.MohammadNoorAbuAsbe.myruppin"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.myruppin"
+        applicationId = "com.MohammadNoorAbuAsbe.myruppin"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

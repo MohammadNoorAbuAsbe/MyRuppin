@@ -100,7 +100,6 @@ class HomeViewModel(
                 val (currentEvents, upcomingEvents) = repository.fetchCurrentEvents(token) ?: Pair(emptyList(), emptyList())
                 _currentEvent.value = currentEvents.firstOrNull()
                 _nextEvent.value = upcomingEvents.firstOrNull()
-                println(_currentEvent.value) // Debugging line
             } catch (e: IOException) {
                 _error.value = "Network error: ${e.message}"
             } catch (e: Exception) {

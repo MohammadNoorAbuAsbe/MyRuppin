@@ -39,9 +39,7 @@ class HomeRepository(private val client: OkHttpClient) {
                 }
 
                 val responseBody = response.body?.string() ?: throw IOException("Empty response body")
-                println("Response Body: $responseBody") // Debugging line
                 val events = parseEvents(responseBody)
-                println("Extracted Events: $events") // Debugging line
 
                 val currentTime = LocalDateTime.now()
                 val currentEvents = events.filter { event ->

@@ -75,7 +75,7 @@ fun CurrentEventCard(
                             fontSize = bodySize
                         )
                         Text(
-                            text = "Time: ${currentEvent.startTime} - ${currentEvent.endTime}",
+                            text = "Time: ${currentEvent.startTime.substring(0, 5)} - ${currentEvent.endTime.substring(0, 5)}",
                             fontSize = bodySize
                         )
                         // Display the countdown timer

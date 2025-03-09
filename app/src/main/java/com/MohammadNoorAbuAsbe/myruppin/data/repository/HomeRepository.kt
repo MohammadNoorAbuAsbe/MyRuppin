@@ -79,7 +79,7 @@ class HomeRepository(private val client: OkHttpClient) {
             }
         }
 
-        return events
+        return events.sortedBy { it.startTime }
     }
 
     /**

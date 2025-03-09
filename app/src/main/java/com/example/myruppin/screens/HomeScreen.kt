@@ -1,5 +1,6 @@
 package com.example.myruppin.screens
 
+import android.os.CountDownTimer
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -27,6 +28,12 @@ import com.example.myruppin.viewmodels.HomeViewModel
 import com.example.myruppin.viewmodels.HomeViewModelFactory
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
+import java.time.Duration
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,6 +70,7 @@ fun HomeScreen(navController: NavController) {
 
     // Collect states
     val currentEvent by viewModel.currentEvent.collectAsState()
+    val nextEvent by viewModel.nextEvent.collectAsState()
     val isLoadingEvent by viewModel.isLoadingEvent.collectAsState()
     val upcomingEvents by viewModel.upcomingEvents.collectAsState()
     val isLoadingUpcoming by viewModel.isLoadingUpcoming.collectAsState()
@@ -81,6 +89,39 @@ fun HomeScreen(navController: NavController) {
         }
     }
 
+    // Timer state
+    var remainingTime by remember { mutableStateOf("") }
+
+// Update the timer using CountDownTimer
+    LaunchedEffect(currentEvent, nextEvent) {
+        val now = LocalTime.now()
+        val eventTimeString = currentEvent?.endTime?.trim() ?: nextEvent?.startTime?.trim()
+        println(eventTimeString)
+        if (eventTimeString != null) {
+            try {
+                val eventTime = LocalTime.parse(eventTimeString, DateTimeFormatter.ofPattern("HH:mm:ss"))
+                val duration = Duration.between(now, eventTime)
+
+                val timer = object : CountDownTimer(duration.toMillis(), 1000) {
+                    override fun onTick(millisUntilFinished: Long) {
+                        val hours = millisUntilFinished / 3600000
+                        val minutes = (millisUntilFinished % 3600000) / 60000
+                        val seconds = (millisUntilFinished % 60000) / 1000
+                        remainingTime = String.format("%02d:%02d:%02d", hours, minutes, seconds)
+                    }
+
+                    override fun onFinish() {
+                        remainingTime = "Event ended"
+                    }
+                }
+                timer.start()
+            } catch (e: DateTimeParseException) {
+                remainingTime = "Invalid time format"
+            }
+        } else {
+            remainingTime = "No event time provided"
+        }
+    }
 
 
     LaunchedEffect(logoutComplete) {
@@ -143,7 +184,7 @@ fun HomeScreen(navController: NavController) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Home")},
+                    title = { Text("Home") },
                     navigationIcon = {
                         IconButton(onClick = {
                             scope.launch {
@@ -176,14 +217,29 @@ fun HomeScreen(navController: NavController) {
             ) {
                 // Current Event Section
                 CurrentEventCard(
-                    currentEvent = currentEvent,
+                    currentEvent = currentEvent ?: nextEvent,
                     isLoading = isLoadingEvent,
                     titleSize = titleSize,
                     subtitleSize = subtitleSize,
                     bodySize = bodySize,
                     standardPadding = standardPadding,
                     smallPadding = smallPadding,
-                    iconSize = iconSize
+                    iconSize = iconSize,
+                    title = when {
+                        currentEvent != null -> "Current Event"
+                        else -> "Next Event"
+                    }
+
+
+                )
+
+                // Display the countdown timer
+                Text(
+                    text = "Time remaining: $remainingTime",
+                    fontSize = bodySize,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(standardPadding)
                 )
 
                 // Upcoming Events Section

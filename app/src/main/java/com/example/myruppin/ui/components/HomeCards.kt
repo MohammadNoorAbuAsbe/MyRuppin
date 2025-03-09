@@ -26,7 +26,8 @@ fun CurrentEventCard(
     bodySize: TextUnit,
     standardPadding: Dp,
     smallPadding: Dp,
-    iconSize: Dp
+    iconSize: Dp,
+    title: String
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -34,10 +35,11 @@ fun CurrentEventCard(
         modifier = Modifier.padding(standardPadding)
     ) {
         Text(
-            text = "Current Event",
+            text = title,
             fontSize = titleSize,
+            fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(smallPadding)
+            modifier = Modifier.padding(bottom = smallPadding)
         )
 
         if (isLoading) {

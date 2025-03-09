@@ -22,6 +22,9 @@ class HomeViewModel(
     private val _currentEvent = MutableStateFlow<EventInfo?>(null)
     val currentEvent: StateFlow<EventInfo?> = _currentEvent.asStateFlow()
 
+    private val _nextEvent = MutableStateFlow<EventInfo?>(null)
+    val nextEvent: StateFlow<EventInfo?> = _nextEvent.asStateFlow()
+
     private val _isLoadingEvent = MutableStateFlow(true)
     val isLoadingEvent: StateFlow<Boolean> = _isLoadingEvent.asStateFlow()
 
@@ -70,7 +73,10 @@ class HomeViewModel(
         viewModelScope.launch {
             try {
                 _isLoadingEvent.value = true
-                _currentEvent.value = repository.fetchCurrentEvent(token)
+                val (currentEvents, upcomingEvents) = repository.fetchCurrentEvents(token) ?: Pair(emptyList(), emptyList())
+                _currentEvent.value = currentEvents.firstOrNull()
+                _nextEvent.value = upcomingEvents.firstOrNull()
+                println(_currentEvent.value) // Debugging line
             } catch (e: IOException) {
                 _error.value = "Network error: ${e.message}"
             } catch (e: Exception) {

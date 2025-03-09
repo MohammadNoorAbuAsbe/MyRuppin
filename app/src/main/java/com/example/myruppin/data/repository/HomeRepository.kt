@@ -18,12 +18,12 @@ class HomeRepository(private val client: OkHttpClient) {
     /**
      * Fetches the current event for today
      */
-    suspend fun fetchCurrentEvent(token: String): EventInfo? {
+    suspend fun fetchCurrentEvents(token: String): Pair<List<EventInfo>, List<EventInfo>>? {
         return withContext(Dispatchers.IO) {
             val today = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
             val jsonBody = JSONObject().apply {
                 put("fromDate", "${today.split('T')[0]}T00:00:00")
-                put("toDate", "${today.split('T')[0]}T00:00:00")
+                put("toDate", "${today.split('T')[0]}T23:59:59")
             }
 
             val request = Request.Builder()
@@ -39,11 +39,49 @@ class HomeRepository(private val client: OkHttpClient) {
                 }
 
                 val responseBody = response.body?.string() ?: throw IOException("Empty response body")
-                parseCurrentEvent(responseBody)
+                println("Response Body: $responseBody") // Debugging line
+                val events = parseEvents(responseBody)
+                println("Extracted Events: $events") // Debugging line
+
+                val currentTime = LocalDateTime.now()
+                val currentEvents = events.filter { event ->
+                    val startTime = LocalDateTime.parse("${today.split('T')[0]}T${event.startTime}")
+                    val endTime = LocalDateTime.parse("${today.split('T')[0]}T${event.endTime}")
+                    currentTime.isAfter(startTime) && currentTime.isBefore(endTime)
+                }
+                val upcomingEvents = events.filter { event ->
+                    val startTime = LocalDateTime.parse("${today.split('T')[0]}T${event.startTime}")
+                    currentTime.isBefore(startTime)
+                }
+
+                Pair(currentEvents, upcomingEvents)
             } catch (e: Exception) {
                 null
             }
         }
+    }
+
+    private fun parseEvents(responseBody: String): List<EventInfo> {
+        val jsonResponse = JSONObject(responseBody)
+        val eventsArray = jsonResponse.optJSONArray("events")
+        val events = mutableListOf<EventInfo>()
+
+        for (i in 0 until (eventsArray?.length() ?: 0)) {
+            val event = eventsArray?.getJSONObject(i)
+            event?.let {
+                val eventData = it.getJSONObject("data")
+                events.add(
+                    EventInfo(
+                        title = eventData.optString("title", "No title"),
+                        place = eventData.optString("place", "No location"),
+                        startTime = eventData.optString("startTime", "").split('T')[1],
+                        endTime = eventData.optString("endTime", "").split('T')[1]
+                    )
+                )
+            }
+        }
+
+        return events
     }
 
     /**

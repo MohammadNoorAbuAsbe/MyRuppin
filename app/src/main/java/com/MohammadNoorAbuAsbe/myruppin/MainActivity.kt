@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
         }
 
         // Schedule the GradeCheckWorker to run periodically
-        val workRequest = PeriodicWorkRequestBuilder<GradeCheckWorker>(15, TimeUnit.MINUTES)
+        val workRequest = PeriodicWorkRequestBuilder<GradeCheckWorker>(5, TimeUnit.MINUTES)
             .build()
 
         WorkManager.getInstance(applicationContext).enqueueUniquePeriodicWork(

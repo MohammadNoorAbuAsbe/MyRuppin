@@ -85,7 +85,7 @@ This project is licensed under the AGPL-3.0 License. See the [LICENSE](LICENSE) 
 
 ## Contact
 
-For any questions or feedback, please contact Mohammad Noor Abu Asbe at [your-email@example.com].
+For any questions or feedback, please contact Mohammad Noor Abu Asbe at [mn.abuasbe@gmail.com].
 
 ---
 

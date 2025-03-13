@@ -55,7 +55,8 @@ fun CurrentEventCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(smallPadding),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                elevation = CardDefaults.cardElevation(4.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 if (currentEvent != null) {
                     Column(
@@ -113,11 +114,12 @@ fun UpcomingEventCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(4.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (event.isExam)
                 MaterialTheme.colorScheme.errorContainer
             else
-                MaterialTheme.colorScheme.surfaceVariant
+                MaterialTheme.colorScheme.surface
         )
     ) {
         Row(

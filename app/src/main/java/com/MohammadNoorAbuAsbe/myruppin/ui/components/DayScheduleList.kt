@@ -38,8 +38,9 @@ fun DayScheduleList(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp),
+                        elevation = CardDefaults.cardElevation(4.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            containerColor = MaterialTheme.colorScheme.surface
                         )
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {

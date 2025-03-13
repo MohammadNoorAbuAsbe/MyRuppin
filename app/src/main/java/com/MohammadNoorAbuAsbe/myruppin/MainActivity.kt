@@ -27,11 +27,36 @@ import androidx.work.WorkManager
 import com.MohammadNoorAbuAsbe.myruppin.screens.ScheduleScreen
 import com.MohammadNoorAbuAsbe.myruppin.workers.GradeCheckWorker
 import java.util.concurrent.TimeUnit
+import android.app.Activity
+import android.util.Log
+import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.gms.tasks.Task
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.appupdate.AppUpdateInfo
+import com.google.android.play.core.appupdate.AppUpdateOptions
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.UpdateAvailability
 
 class MainActivity : ComponentActivity() {
 
     companion object {
         private const val REQUEST_CODE = 1001
+        private const val TAG = "MainActivity"
+    }
+
+    private val activityResultLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        val resultCode = result.resultCode
+        when {
+            resultCode == Activity.RESULT_OK -> {
+                Log.v(TAG, "Update flow completed!")
+            }
+            resultCode == Activity.RESULT_CANCELED -> {
+                Log.v(TAG, "User cancelled Update flow!")
+            }
+            else -> {
+                Log.v(TAG, "Update flow failed with resultCode:$resultCode")
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,6 +80,8 @@ class MainActivity : ComponentActivity() {
             workRequest
         )
 
+        // Check for app updates
+        checkForAppUpdate()
 
         setContent {
             MyRuppinTheme {
@@ -65,6 +92,28 @@ class MainActivity : ComponentActivity() {
                     AppNavigation()
                 }
             }
+        }
+    }
+
+    private fun checkForAppUpdate() {
+        val appUpdateManager = AppUpdateManagerFactory.create(this)
+        val appUpdateInfoTask: Task<AppUpdateInfo> = appUpdateManager.appUpdateInfo
+
+        appUpdateInfoTask.addOnSuccessListener { appUpdateInfo ->
+            Log.d(TAG, "Update availability: ${appUpdateInfo.updateAvailability()}")
+            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE &&
+                appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)) {
+                Log.d(TAG, "Update available, starting update flow")
+                appUpdateManager.startUpdateFlowForResult(
+                    appUpdateInfo,
+                    activityResultLauncher,
+                    AppUpdateOptions.newBuilder(AppUpdateType.FLEXIBLE).build()
+                )
+            } else {
+                Log.d(TAG, "No update available or update type not allowed")
+            }
+        }.addOnFailureListener { exception ->
+            Log.e(TAG, "Update check failed", exception)
         }
     }
 }

@@ -12,8 +12,8 @@ android {
         applicationId = "com.MohammadNoorAbuAsbe.myruppin"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "2.5"
+        versionCode = 5
+        versionName = "2.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -63,5 +63,7 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation (libs.app.update)
+    implementation (libs.app.update.ktx)
 
 }

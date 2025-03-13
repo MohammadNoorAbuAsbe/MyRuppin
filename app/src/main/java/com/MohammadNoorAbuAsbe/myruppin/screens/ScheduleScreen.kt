@@ -8,7 +8,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.MohammadNoorAbuAsbe.myruppin.data.TokenManager
@@ -53,6 +55,15 @@ fun ScheduleScreen(navController: NavController) {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
+                },
+                actions = {
+                    Button(
+                        onClick = {
+                            viewModel.toggleScheduleView()
+                                  },
+                        modifier = Modifier.padding(end = 16.dp)) {
+                        Text(if (showSchedule) "Show Calendar View" else "Show Schedule View")
+                    }
                 }
             )
         }
@@ -64,11 +75,6 @@ fun ScheduleScreen(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            // Toggle Button
-            Button(onClick = { viewModel.toggleScheduleView() }) {
-                Text(if (showSchedule) "Show Calendar View" else "Show Schedule View")
-            }
-
             if (showSchedule) {
                 // Schedule View
                 Row(

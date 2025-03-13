@@ -179,7 +179,6 @@ fun HomeScreen(navController: NavController) {
                     }
                 )
 
-                // Add more drawer items as needed
             }
         }
     ) {

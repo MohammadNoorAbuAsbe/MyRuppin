@@ -51,8 +51,11 @@ class GradeCheckWorker(
 
                 if (newGrades != storedGrades) {
                     val newEntries = newGrades - storedGrades
+                    val existingCourses = storedGrades.map { it.first }.toSet()
                     newEntries.forEachIndexed { index, (course, grade) ->
-                        sendNotification("New Grade Update", "New grade for $course: $grade", index)
+                        if (course in existingCourses) {
+                            sendNotification("New Grade Update", "New grade for $course: $grade", index)
+                        }
                     }
                     tokenManager.saveGrades(newGrades.map { "${it.first}: ${it.second}" }.toSet())
                 }

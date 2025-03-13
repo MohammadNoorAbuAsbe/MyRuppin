@@ -12,9 +12,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
 import java.time.LocalDate
 import java.time.YearMonth
 import com.MohammadNoorAbuAsbe.myruppin.utils.DateUtils.formatTimeFromDateTime
+import kotlinx.coroutines.awaitAll
 
 class ScheduleViewModel(
     private val repository: ScheduleRepository,
@@ -60,11 +62,13 @@ class ScheduleViewModel(
                 token?.let { currentToken ->
                     try {
                         _isLoading.value = true
-                        val params = repository.fetchScheduleParams(currentToken)
+                        val paramsDeferred = async { repository.fetchScheduleParams(currentToken) }
+                        val params = paramsDeferred.await()
                         _scheduleParams.value = params
 
-                        // Fetch schedule data
-                        val courses = repository.fetchSchedule(currentToken, params)
+                        // Fetch schedule data concurrently
+                        val coursesDeferred = async { repository.fetchSchedule(currentToken, params) }
+                        val courses = coursesDeferred.await()
                         _scheduleData.value = courses
 
                         // Set initial filter if available
@@ -120,7 +124,6 @@ class ScheduleViewModel(
             .sortedBy { formatTimeFromDateTime(it.startTime) }
     }
 
-
     private suspend fun fetchMonthSchedule(token: String, yearMonth: YearMonth, params: ScheduleParams) {
         if (_isFetchingMonthData.value) return
         _isFetchingMonthData.value = true
@@ -162,23 +165,19 @@ class ScheduleViewModel(
                 return
             }
 
-            // Fetch all needed weeks
-            for (startDay in weeksToFetch) {
-                try {
-                    val weekSchedule = repository.fetchWeekSchedule(token, params, startDay)
+            // Fetch all needed weeks concurrently
+            val weekSchedules = weeksToFetch.map { startDay ->
+                viewModelScope.async { repository.fetchWeekSchedule(token, params, startDay) }
+            }.awaitAll()
 
-                    // Add to our global cache
-                    val newCache = _allMonthSchedules.value.toMutableMap()
-                    for (schedule in weekSchedule) {
-                        val dateKey = schedule.date.split("T")[0] // Get just the date part
-                        val existingList = newCache[dateKey] ?: emptyList()
-                        newCache[dateKey] = existingList + schedule
-                    }
-                    _allMonthSchedules.value = newCache
-                } catch (e: Exception) {
-                    // Handle individual week fetch failure
-                }
+            // Add to our global cache
+            val newCache = _allMonthSchedules.value.toMutableMap()
+            weekSchedules.flatten().forEach { schedule ->
+                val dateKey = schedule.date.split("T")[0] // Get just the date part
+                val existingList = newCache[dateKey] ?: emptyList()
+                newCache[dateKey] = existingList + schedule
             }
+            _allMonthSchedules.value = newCache
 
             // Update the current month's schedule from the cache
             updateMonthScheduleFromCache(yearMonth)

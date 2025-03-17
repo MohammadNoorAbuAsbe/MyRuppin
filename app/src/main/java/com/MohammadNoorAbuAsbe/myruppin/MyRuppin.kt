@@ -18,7 +18,7 @@ class MyRuppin : Application() {
 
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "GradeCheckWork",
-            ExistingPeriodicWorkPolicy.REPLACE, // Ensure the worker is re-enqueued
+            ExistingPeriodicWorkPolicy.KEEP,
             gradeCheckRequest
         )
     }

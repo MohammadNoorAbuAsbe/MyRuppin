@@ -1,6 +1,7 @@
 package com.MohammadNoorAbuAsbe.myruppin
 
 import android.app.Application
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.MohammadNoorAbuAsbe.myruppin.workers.GradeCheckWorker
@@ -12,9 +13,13 @@ class MyRuppin : Application() {
         super.onCreate()
 
         // Schedule the WorkManager task
-        val gradeCheckRequest = PeriodicWorkRequestBuilder<GradeCheckWorker>(5, TimeUnit.MINUTES)
+        val gradeCheckRequest = PeriodicWorkRequestBuilder<GradeCheckWorker>(15, TimeUnit.MINUTES)
             .build()
 
-        WorkManager.getInstance(this).enqueue(gradeCheckRequest)
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "GradeCheckWork",
+            ExistingPeriodicWorkPolicy.REPLACE, // Ensure the worker is re-enqueued
+            gradeCheckRequest
+        )
     }
 }

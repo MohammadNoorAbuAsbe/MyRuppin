@@ -33,6 +33,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
+import com.MohammadNoorAbuAsbe.myruppin.screens.CreditsScreen
 import com.google.android.gms.tasks.Task
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.appupdate.AppUpdateInfo
@@ -180,6 +181,9 @@ fun AppNavigation() {
         }
         composable("schedule") {
             ScheduleScreen(navController)
+        }
+        composable("credits") {
+            CreditsScreen(navController = navController)
         }
     }
 }
